@@ -113,7 +113,7 @@ public class MypageDAO {
 					vo.setWish_photo(photo);
 				}
 				else if(vo.getType()==2){
-					photo=session.selectOne("restaurant_wishlist_image");
+					photo=session.selectOne("restaurant_wishlist_image",no);
 					vo.setWish_photo(photo);
 				}
 				else if(vo.getType()==3){

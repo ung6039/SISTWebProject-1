@@ -58,13 +58,13 @@
 		WHERE no=#{no }
 	</select>
 	
-	<select id="festival_wishlist_image" parameterType="int">
+	<select id="festival_wishlist_image" parameterType="int" resultType="string">
 		SELECT fphoto from festival
 		WHERE no =#{no}
 	</select>
 	
-	<select id="restaurant_wishlist_image" parameterType="int">
-		SELECT rphoto FROM resturant
+	<select id="restaurant_wishlist_image" parameterType="int" resultType="string">
+		SELECT rphoto FROM restaurant
 		WHERE no = #{no}
 	</select>
 	
