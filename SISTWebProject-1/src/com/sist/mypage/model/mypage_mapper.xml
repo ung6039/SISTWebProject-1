@@ -43,7 +43,7 @@
 	</select>
 	
 	<select id="mypage_wishlist_totalPage" parameterType="string" resultType="int">
-		select Trunc(count(*)/5) FROM wishlist
+		select CEIL(count(*)/5) FROM wishlist
 		where memberId = #{memberId}
 	</select>
 	
@@ -53,9 +53,19 @@
 		where reviewno = #{reviewNo}
 	</select>
 	
-	<select id="mypage_getimage" resultType="string">
+	<select id="mypage_getimage" resultType="string" parameterType="int">
 		SELECT tphoto from tourplace
 		WHERE no=#{no }
+	</select>
+	
+	<select id="festival_wishlist_image" parameterType="int">
+		SELECT fphoto from festival
+		WHERE no =#{no}
+	</select>
+	
+	<select id="restaurant_wishlist_image" parameterType="int">
+		SELECT rphoto FROM resturant
+		WHERE no = #{no}
 	</select>
 	
 	<select id="BookingListData" parameterType="hashmap" resultType="BookingRestaurantVO_u">
@@ -69,7 +79,7 @@
 	</select>
 	
 	<select id="bookingTotalPage" parameterType="string" resultType="int">
-		SELECT TRUNC(COUNT(*)/5) FROM bookingrestaurant
+		SELECT CEIL(COUNT(*)/5) FROM bookingrestaurant
 		WHERE memberId = #{memberId}
 	</select>
 	
@@ -79,7 +89,7 @@
 	</select>
 	
 	<select id="restaurant_review_score" parameterType="int" resultType="string">
-		SELECT TRUNC(AVG(grade),1) FROM review
+		SELECT CEIL(AVG(grade),1) FROM review
 		WHERE no=#{no} and type=2
 	</select>
 	
@@ -88,7 +98,7 @@
 	 	where memberid = #{memberId} and bookingnumber = #{bookingnumber}
 	</delete>
 	<select id="reviewTotalCount_mypage" parameterType="string" resultType="int">
-		SELECT Trunc(COUNT(*)/5) FROM review
+		SELECT CEIL(COUNT(*)/5) FROM review
 		WHERE memberId =#{id}
 	</select>
 	

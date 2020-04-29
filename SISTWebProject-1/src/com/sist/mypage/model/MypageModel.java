@@ -80,8 +80,6 @@ public class MypageModel {
 		wish_count = MypageDAO.wishlist_Totalpage(id);
 		List<WishListVO_u> wish_list = MypageDAO.wishlistData(id);
 		
-		
-		
 		request.setAttribute("totalpage", totalpage);
 		request.setAttribute("curpage", curpage);
 		request.setAttribute("mypage_review_list", review_list);

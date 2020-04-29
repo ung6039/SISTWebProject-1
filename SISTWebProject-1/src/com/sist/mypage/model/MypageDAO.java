@@ -95,8 +95,10 @@ public class MypageDAO {
 		return count;
 	}
 	public static List<WishListVO_u> wishlistData(String id){
+		
 		SqlSession session =null;
 		List<WishListVO_u> list = new ArrayList<WishListVO_u>();
+		List<String> photo_list = new ArrayList<String>();
 		try{
 			session = ssf.openSession();
 			list = session.selectList("wishtList",id);
@@ -106,12 +108,24 @@ public class MypageDAO {
 			for(WishListVO_u vo : list){
 				try{
 				no = vo.getNo();
-				photo=session.selectOne("mypage_getimage",no);
-				if(photo.equals(null)){
+				if(vo.getType()==1){
+					photo=session.selectOne("mypage_getimage",no);
+					vo.setWish_photo(photo);
+				}
+				else if(vo.getType()==2){
+					photo=session.selectOne("restaurant_wishlist_image");
+					vo.setWish_photo(photo);
+				}
+				else if(vo.getType()==3){
+					photo=session.selectOne("festival_wishlist_image",no);
+					vo.setWish_photo(photo);
+				}
+				else if(photo.equals(null)){
 					photo="../img/img_def.png";
 					vo.setWish_photo(photo);
 				}
 				}catch(Exception ex){
+					photo_list =session.selectList("mypage_getimage",no);
 					photo="../img/img_def.png";
 					System.out.println("wishlist Error : "+ex.getMessage());
 					vo.setWish_photo(photo);
@@ -137,7 +151,6 @@ public class MypageDAO {
 			list = session.selectList("getReviewData",map);
 			
 		} catch (Exception e) {
-			// TODO: handle exception
 			System.out.println(e.getMessage());
 		}finally{
 			if(session!=null)
@@ -160,23 +173,47 @@ public class MypageDAO {
 		
 		return count;
 	}
+	
 	//리뷰별 이미지 출력
 	public static List<ReviewVO_u> getImageForReview(List<ReviewVO_u> list, int[] reviewNo){	
 		SqlSession session=null;
-		
+		int eno =0;
 		try {
 			session = ssf.openSession();
 			
 			String filepath=" ";
 			String temp ="";
+			for(int i : reviewNo){
+				System.out.print(i+"_");
+			}
 			for(int i=0; i<reviewNo.length; i++){
 				try{
+					
 				filepath = session.selectOne("getReviewData_image_profile",reviewNo[i]);
 				temp = temp+filepath+"@";
 				}catch(Exception ex){
 					System.out.println("파일 패스 오류 : "+ex.getMessage());
+					System.out.println(eno);
+					if(eno>0){
+						List<String> elist = new ArrayList<String>();
+						String temp_res=" ";
+						elist = session.selectList("getReviewData_image_profile",reviewNo[i-1]);
+						System.out.println(elist.size());
+						for(String s : elist){
+							System.out.println("오류 확인!");
+							System.out.println(s);
+						}
+					}
+					else if(eno==0){
+						List<String> elist = session.selectList("getReviewData_image_profile",reviewNo[0]);
+						for(String s : elist){
+							System.out.println("!오류 확인! : "+ex.getMessage());
+							System.out.println(s);
+						}
+					}
 					temp=temp+"null"+"@";
 				}
+				eno++;
 			}
 			String[] filepath_temp = temp.split("@");
 			for(String te : filepath_temp){
@@ -185,9 +222,7 @@ public class MypageDAO {
 			for(ReviewVO_u vo1 : list){
 				vo1.setFilepath(filepath_temp[i]);
 				i++;
-			}
-			
-			
+			}	
 		} catch (Exception e) {
 			System.out.println(e.getMessage());
 			e.printStackTrace();
@@ -196,9 +231,8 @@ public class MypageDAO {
 				session.close();
 		}
 		return list;
-		
-		
 	}
+	
 	public static List<BookingRestaurantVO_u> BookingListData(Map map){
 		List<BookingRestaurantVO_u> Booking_list = new ArrayList<BookingRestaurantVO_u>();
 		SqlSession session = null;
@@ -215,7 +249,7 @@ public class MypageDAO {
 				bvo.setGrade(grade);
 			}
 		} catch (Exception e) {
-			// TODO: handle exception
+			
 			System.out.println(e.getMessage());
 			e.printStackTrace();
 		}finally{
