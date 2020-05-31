@@ -1,6 +1,19 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.sist.detail.dao.detail-mapper">
+	<select id="reviewMin" resultType="int">
+		SELECT MIN(grade)
+        FROM REVIEW
+        WHERE no=#{no} AND type=#{type}
+	</select>
+
+	<select id="reviewMax" resultType="int">
+		SELECT MAX(grade)
+        FROM REVIEW
+        WHERE no=#{no} AND type=#{type}
+	</select>
+
+
 	<select id="getTourplaceData" resultType="DetailTourplaceVO" parameterType="int">
 		SELECT * 
 		FROM tourplace
@@ -27,10 +40,29 @@
 		SELECT no,reviewno,title,memberid,content,regdate,expdate,likecount,grade,num
 		FROM (SELECT no,reviewno,title,memberid,content,regdate,expdate,likecount,grade,rownum as num
 		FROM (SELECT no,reviewno,title,memberid,content,regdate,expdate,likecount,grade
-		FROM review WHERE no=#{no} AND type=#{type} ORDER BY no ASC))
+		FROM review WHERE no=#{no} AND type=#{type} ORDER BY reviewno DESC))
 		WHERE num BETWEEN #{start} AND #{end}
 	</select>
 	
+	<select id="DetailTop" resultType="DetailReviewVO" parameterType="java.util.Map">
+        SELECT no,reviewno,title,memberid,content,regdate,expdate,likecount,grade,numm
+        FROM ( SELECT no,reviewno,title,memberid,content,regdate,expdate,likecount,grade, rownum as numm
+        FROM (SELECT no,reviewno,title,memberid,content,regdate,expdate,likecount,grade 
+		FROM (SELECT no,reviewno,title,memberid,content,regdate,expdate,likecount,grade 
+		FROM review WHERE no=#{no} AND type=#{type} ORDER BY regdate DESC)
+        WHERE grade=#{grade} ORDER BY likecount DESC) ORDER BY numm)
+        WHERE numm=#{numm}
+ 	</select>
+
+	<select id="DetailWorst" resultType="DetailReviewVO" parameterType="java.util.Map">
+        SELECT no,reviewno,title,memberid,content,regdate,expdate,likecount,grade,numm
+        FROM ( SELECT no,reviewno,title,memberid,content,regdate,expdate,likecount,grade, rownum as numm
+        FROM (SELECT no,reviewno,title,memberid,content,regdate,expdate,likecount,grade 
+		FROM (SELECT no,reviewno,title,memberid,content,regdate,expdate,likecount,grade 
+		FROM review WHERE no=#{no} AND type=#{type} ORDER BY regdate DESC)
+        WHERE grade=#{grade} ORDER BY likecount DESC) ORDER BY numm)
+        WHERE numm=#{numm}
+ 	</select>
 	
 	<resultMap type="DetailTourplaceVO" id="tourMap">
 
@@ -107,24 +139,24 @@
  	</select>
  	
  	<select id="getNearTourplace" resultType="DetailTourplaceVO" parameterType="java.util.Map">
- 		SELECT tphoto, tname, no, distance, num
-		FROM (SELECT tphoto, tname, no, distance, rownum as num 
-		FROM (SELECT tphoto, tname, no, distance_wgs84(#{mapx},#{mapy},mapx,mapy) as distance from tourplace
+ 		SELECT tphoto, tname, no, mapx,mapy,distance, num
+		FROM (SELECT tphoto, tname, no, mapx,mapy,distance, rownum as num 
+		FROM (SELECT tphoto, tname, no,mapx,mapy, distance_wgs84(#{mapx},#{mapy},mapx,mapy) as distance from tourplace
 		ORDER by distance ASC ))
 		WHERE num BETWEEN 2 AND 5
  	</select>
  	
   	<select id="getNearRestaurant" resultType="DetailRestaurantVO" parameterType="java.util.Map">
- 		SELECT rname, no, distance, num
-		FROM (SELECT rname, no, distance, rownum as num 
-		FROM (SELECT rname, no, distance_wgs84(#{mapx},#{mapy},mapx,mapy) as distance from restaurant
+ 		SELECT rphoto,rname, no, mapx,mapy,distance, num
+		FROM (SELECT rphoto,rname, no, mapx,mapy,distance, rownum as num 
+		FROM (SELECT rphoto,rname, no, mapx,mapy,distance_wgs84(#{mapx},#{mapy},mapx,mapy) as distance from restaurant
 		ORDER by distance ASC ))
 		WHERE num BETWEEN 2 AND 5
 	</select>
  	 <select id="getNearFestival" resultType="DetailFestivalVO" parameterType="java.util.Map">
- 		SELECT fname, no, distance, num
-		FROM (SELECT fname, no, distance, rownum as num 
-		FROM (SELECT fname, no, distance_wgs84(#{mapx},#{mapy},mapx,mapy) as distance from festival
+ 		SELECT fphoto,fname, no, distance, num
+		FROM (SELECT fphoto,fname, no, distance, rownum as num 
+		FROM (SELECT fphoto,fname, no, distance_wgs84(#{mapx},#{mapy},mapx,mapy) as distance from festival
 		ORDER by distance ASC ))
 		WHERE num BETWEEN 2 AND 5
  	</select>
@@ -151,12 +183,14 @@
 		</selectKey>
 			INSERT INTO qna VALUES(#{memberid},#{no},#{title},#{pwd},#{content},#{type},#{seq})
 	</insert>
-	
+
 	<select id="detailQnaTotalPage" ></select>	 -->
+
+
 	<select id="getRankingTourplace" resultType="DetailRankTourVO" parameterType="int">
 		SELECT no,Tname,average,cnt,RANKING
 		FROM (SELECT no,Tname,average,cnt,RANK() OVER (ORDER BY average DESC,cnt DESC ) AS RANKING
-		FROM (SELECT tourplace.no as no ,TNAME, AVG(review.grade) as average, Count(*) as cnt
+		FROM (SELECT tourplace.no as no ,TNAME, AVG(review.grade)*log(10,count(*)/10+10) as average, Count(*) as cnt
 		FROM tourplace,review
 		WHERE tourplace.no = review.no group by TNAME,tourplace.no
 		ORDER BY AVERAGE DESC, cnt DESC))
@@ -166,7 +200,7 @@
 	<select id="getRankingRestaurant" resultType="DetailRankResVO" parameterType="int">
 		SELECT no,Rname,average,cnt,RANKING
 		FROM (SELECT no,Rname,average,cnt,RANK() OVER (ORDER BY average DESC,cnt DESC ) AS RANKING
-		FROM (SELECT restaurant.no as no ,rNAME, AVG(review.grade) as average, Count(*) as cnt
+		FROM (SELECT restaurant.no as no ,rNAME, AVG(review.grade)*log(10,count(*)/10+10) as average, Count(*) as cnt
 		FROM restaurant,review
 		WHERE restaurant.no = review.no group by rNAME,restaurant.no
 		ORDER BY AVERAGE DESC, cnt DESC))
@@ -175,7 +209,7 @@
 	<select id="getRankingFestival" resultType="DetailRankFestivalVO" parameterType="int">
 		SELECT no,fname,average,cnt,RANKING
 		FROM (SELECT no,fname,average,cnt,RANK() OVER (ORDER BY average DESC,cnt DESC ) AS RANKING
-		FROM (SELECT festival.no as no ,fNAME, AVG(review.grade) as average, Count(*) as cnt
+		FROM (SELECT festival.no as no ,fNAME, AVG(review.grade)*log(10,count(*)/10+10) as average, Count(*) as cnt
 		FROM festival,review
 		WHERE festival.no = review.no group by fNAME,festival.no
 		ORDER BY AVERAGE DESC, cnt DESC))
@@ -211,6 +245,16 @@
 		WHERE tourtagmapper.tno = tourplace.no AND tourplace.no=#{no})
 		WHERE tourtag.tagcode = ttm
 	</select>
+
+	<select id="getTourTagCode" resultType="String" parameterType="int">
+		SELECT tourtag.tagcode
+		FROM tourtag,(
+		SELECT tourtagmapper.tagcode as ttm, tourplace.no
+		FROM tourtagmapper,tourplace
+		WHERE tourtagmapper.tno = tourplace.no AND tourplace.no=#{no})
+		WHERE tourtag.tagcode = ttm
+	</select>
+
 	<select id="getResTag" resultType="String" parameterType="int">
 		SELECT RESTAURANTTAG.tagname
 		FROM RESTAURANTTAG,(
@@ -220,7 +264,115 @@
 		WHERE restauranttag.tagcode = rtm
 	</select>
 	
+	<select id="getResTagCode" resultType="String" parameterType="int">
+		SELECT RESTAURANTTAG.tagcode
+		FROM RESTAURANTTAG,(
+		SELECT RESTTAGMAPPER.tagcode as rtm, restaurant.no
+		FROM resttagmapper,restaurant
+		WHERE resttagmapper.rno = restaurant.no AND restaurant.no=#{no})
+		WHERE restauranttag.tagcode = rtm
+	</select>
+	
+	
+	<select id="DetailhashtagList" resultType="String" parameterType="hashmap">
+		SELECT hashtagtable.tagname
+		FROM hashtagtable,(
+		SELECT hash, no, type
+		FROM (SELECT reviewtohashtag.tagcode as hash, review.reviewno, review.no as no, review.type as type
+		FROM reviewtohashtag,review
+		WHERE reviewtohashtag.reviewno = review.reviewno)
+		WHERE no=#{no} AND type=#{type} group by hash,no,type)
+		WHERE hashtagtable.tagcode = hash
+	</select>
 
+
+	<!-- 
+	private int reviewno;
+	private int type;
+	private int no;
+	private String memberid;
+	private String title;
+	private Date regdate;
+	private Date expdate;
+	private int likecount;
+	private int groupid;
+	private int groupstep;
+	private int root;
+	private int depth;
+	private String content;
+	private int grade;
+
+ -->
+	<insert id="DetailReviewInsert" parameterType="DetailReviewVO">
+		<selectKey keyProperty="reviewno" resultType="int" order="BEFORE">
+			SELECT NVL(max(reviewno)+1,1) as reviewno FROM review
+		</selectKey>	
+			INSERT INTO review(reviewno,type,no,memberid,title,regdate,expdate,content,grade,depth,groupid) VALUES (
+			#{reviewno},
+			#{type},
+			#{no},
+			#{memberid},
+			#{title},
+			#{regdate},
+			#{expdate},
+			#{content},
+			#{grade},
+			#{depth},
+			(SELECT NVL(MAX(groupid)+1,1) FROM review)
+			)
+	</insert>
+	
+	<select id="getReviewNumber" resultType="int">
+		select MAX(reviewno) 
+		FROM review
+	</select>
+	
+	
+	<insert id="DetailPhotoInsert" parameterType="java.util.Map">
+		<selectKey keyProperty="no" resultType="int" order="BEFORE">
+			SELECT NVL(MAX(no)+1,1) as no FROM photo
+		</selectKey>
+			INSERT INTO photo(no,reviewno,filepath) VALUES (
+			#{no},
+			#{reviewno},
+			#{filepath}
+			)
+	</insert>
+	
+	<select id="DetailReviewHashtag" resultType="DetailReviewHashVO" parameterType="java.util.Map">
+		select no,type,reviewno,tagname,tagcode
+		FROm review_hashtag
+		WHERE no=#{no} AND type=#{type}	
+	</select>
+	
+	<select id="DetailInfoImages" resultType="String" parameterType="java.util.Map">
+		SELECT filepath
+        FROM (SELECT photo.filepath as filepath, rownum as numm
+		FROM PHOTO,(
+		SELECT reviewno as rro, type
+		FROM REVIEW
+		WHERE no=#{no} AND type=#{type})
+		WHERE rro=photo.reviewno)
+ 	</select>
+
+
+	<select id="DetailTourplaceTag" resultType="DetailTagMappingVO" parameterType="int">
+		SELECT tagcode,tagname
+		FROM tourtag,(
+		SELECT tourtagmapper.tagcode as ttm, tourplace.no
+		FROM tourtagmapper,tourplace
+		WHERE tourtagmapper.tno = tourplace.no AND tourplace.no=#{no})
+		WHERE tourtag.tagcode = ttm
+	</select>
+
+	<select id="DetailRestaurantTag" resultType="DetailTagMappingVO" parameterType="int">
+        SELECT tagcode, tagname
+		FROM RESTAURANTTAG,(
+		SELECT RESTTAGMAPPER.tagcode as rtm, restaurant.no
+		FROM resttagmapper,restaurant
+		WHERE resttagmapper.rno = restaurant.no AND restaurant.no=#{no})
+		WHERE restauranttag.tagcode = rtm
+	</select>
 </mapper>
 
 

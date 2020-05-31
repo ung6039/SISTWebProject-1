@@ -322,12 +322,14 @@ public class MypageModel {
 		String id = request.getParameter("id");
 		String no = request.getParameter("no");
 		WishListVO_u wish_vo = new  WishListVO_u();
-		wish_vo.setMemeberId(id);
+		System.out.println(id+":"+no);
+		wish_vo.setMemberId(id);
 		wish_vo.setNo(Integer.parseInt(no));
 		MypageDAO.mypage_wishlistDelete(wish_vo);
 		
 		
 		return "redirect:..mypage/profile.do?id="+id;
 	}
+
 
 }

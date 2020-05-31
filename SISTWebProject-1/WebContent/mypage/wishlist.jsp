@@ -35,6 +35,9 @@
 								<b>${vo.wishlistname }</b>
 							</a>
 						</div>
+						<div style="float:right;">
+						<a class="btn btn-md" style="background-color: red" href="../mypage/deletewishlist.do?id=${vo.memberId }&no=${vo.no}">삭제</a>
+						</div>
 					</div>
 				</c:forEach>
 			</div>
